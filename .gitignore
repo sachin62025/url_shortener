@@ -11,3 +11,4 @@ instance/
 *.log
 *.pot
 notes.txt
+run_local.sh
