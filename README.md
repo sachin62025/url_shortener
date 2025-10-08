@@ -198,4 +198,14 @@ url_shortener/
 └── README.md
 ```
 
+## Future Improvements
+
+- Authentication for analytics dashboard
+- Expiration date for links
+- Custom short codes
+- Admin panel with stats
+- HTTPS with Let’s Encrypt (for production)
+
+---
+
 ---
