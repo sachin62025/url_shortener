@@ -25,10 +25,7 @@ When anyone visits that short link, they are **redirected to the original URL**,
 - Simple Flask + Jinja2 frontend
 - Full Docker Compose support (one command deployment)
 - Automated test script (`test_app.py`) for validation
-
----
-
----
+- ---
 
 ## Architecture Diagram
 
@@ -169,7 +166,6 @@ docker-compose logs -f
   - If **hit**, redirect instantly.
   - If **miss**, fetch from DB → cache → redirect.
 
-
 ---
 
 ## Folder Structure
@@ -205,7 +201,5 @@ url_shortener/
 - Custom short codes
 - Admin panel with stats
 - HTTPS with Let’s Encrypt (for production)
-
----
 
 ---
