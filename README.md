@@ -2,10 +2,8 @@
 
 ### Objective
 
-Design and implement a **scalable URL Shortener system** that converts long URLs into short links and redirects users efficiently.
-This project demonstrates **backend architecture, caching, async task handling, and containerized deployment**.
-
----
+A production-ready **URL Shortener** (like Bitly) built using **FastAPI**, **Flask**, **PostgreSQL**, **Redis**, **Celery**, and **Nginx**.
+It supports fast link shortening, redirection, caching, analytics, and asynchronous click tracking.
 
 ## 1. System Overview
 
@@ -18,9 +16,21 @@ Output: https://short.ly/xYz12A
 
 When anyone visits that short link, they are **redirected to the original URL**, while **analytics are tracked** asynchronously.
 
+## Features
+
+- Generate short URLs instantly
+- Fast redirection with Redis cache
+- Track click counts (asynchronously with Celery)
+- REST API built with FastAPI
+- Simple Flask + Jinja2 frontend
+- Full Docker Compose support (one command deployment)
+- Automated test script (`test_app.py`) for validation
+
 ---
 
-## 2. Architecture Diagram
+---
+
+## Architecture Diagram
 
 ```
 [User / Browser]
@@ -44,7 +54,7 @@ When anyone visits that short link, they are **redirected to the original URL**,
 
 ---
 
-## 3. Core Components
+## Core Components
 
 | Component                  | Tech Stack              | Purpose                                                   |
 | -------------------------- | ----------------------- | --------------------------------------------------------- |
@@ -56,66 +66,87 @@ When anyone visits that short link, they are **redirected to the original URL**,
 | **Proxy**            | Nginx                   | Routes traffic to frontend/backend and handles SSL        |
 | **Containerization** | Docker + Docker Compose | Run all services easily in isolated environments          |
 
----
+## Environment Variables (`.env`)
 
-## 4. Functional Requirements
+```env
+POSTGRES_DB=url_shortener
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=admin
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+DATABASE_URL=postgresql+psycopg2://admin:admin@db:5432/url_shortener  # for local direct sqlite:///./url_shortener.db
 
-**Core Features**
+REDIS_URL=redis://redis:6379/0
+BASE_URL=http://localhost:8080
+PORT=8000
 
-1. User submits a long URL → gets back a short URL.
-2. Visiting the short URL redirects to the original link.
-3. Each visit increments a click count asynchronously.
-4. Display analytics (number of clicks, creation date).
-
-**Additional (Optional)**
-
-- Expiry time for short URLs.
-- User authentication for managing links.
-- Custom alias (user-defined short codes).
-
----
-
-## 5. API Design (FastAPI)
-
-### Create Short URL
-
-**POST /api/create**
-
-```json
-Request:
-{
-  "url": "https://example.com/my-long-link"
-}
-
-Response:
-{
-  "short_url": "https://short.ly/aB9xYz"
-}
+CELERY_BROKER_URL=redis://redis:6379/1
+CELERY_RESULT_BACKEND=redis://redis:6379/1
 ```
 
-### Redirect to Original
+## Run Locally (without Docker)
 
-**GET /{short_id}**
+### Clone the repository
 
-- Redirects to original URL if found.
-- Increments analytics count asynchronously.
-
-### Get Analytics
-
-**GET /api/analytics/{short_id}**
-
-```json
-Response:
-{
-  "original_url": "https://example.com/my-long-link",
-  "clicks": 124,
-  "created_at": "2025-10-07T14:22:00"
-}
+```bash
+git clone https://github.com/sachin62025/url_shortener.git
+cd url_shortener
 ```
 
----
+### Create virtual environment
 
-## 6. Database Schema (PostgreSQL)
+```bash
+python -m venv venv
+venv\Scripts\activate 
+```
+
+### Install dependencies
+
+```bash
+pip install -r backend/requirements.txt
+pip install -r frontend/requirements.txt
+```
+
+### Setup database
+
+```bash
+python backend/create_tables.py ## direct create
+```
+
+### Start services
+
+```bash
+# Start Redis manually (or via Docker) 
+redis-server
+```
+
+# Start Application direct
+
+```
+run_local.bat
+```
+
+### Access app
+
+- Frontend → http://localhost:5000
+- API Docs → http://localhost:8000/docs
+
+## Run with Docker (recommended)
+
+### Build & start containers
+
+```bash
+docker-compose up --build
+docker-compose ps
+docker-compose logs -f
+```
+
+## Access app
+
+- Frontend → http://localhost:5000
+- API Docs → http://localhost:8000/docs
+
+## Database Schema (PostgreSQL)
 
 **Table: `urls`**
 
@@ -129,7 +160,7 @@ Response:
 
 ---
 
-## 7. Redis Cache Design
+## Redis Cache Design
 
 **Key** → short_id**Value** → original_url
 
@@ -138,135 +169,10 @@ Response:
   - If **hit**, redirect instantly.
   - If **miss**, fetch from DB → cache → redirect.
 
----
-
-## 8. Celery Queue (Asynchronous Analytics)
-
-Celery Task Example:
-
-```python
-@celery.task
-def record_click(short_id):
-    db.increment_click(short_id)
-```
-
-When a user hits `/{short_id}`:
-
-```python
-@app.get("/{short_id}")
-def redirect_to_url(short_id: str):
-    url = redis.get(short_id) or db.get_url(short_id)
-    if url:
-        record_click.delay(short_id)
-        return RedirectResponse(url)
-    raise HTTPException(status_code=404)
-```
 
 ---
 
-## 9. Flask Frontend
-
-**index.html** — Input form for long URL
-**result.html** — Displays short link
-
-Flask routes:
-
-```python
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if request.method == "POST":
-        long_url = request.form["url"]
-        response = requests.post("http://backend:8000/api/create", json={"url": long_url})
-        short_url = response.json()["short_url"]
-        return render_template("result.html", short_url=short_url)
-    return render_template("index.html")
-```
-
----
-
-## 10. Docker Compose Setup
-
-**docker-compose.yml**
-
-```yaml
-version: '3.9'
-services:
-  frontend:
-    build: ./frontend
-    ports:
-      - "5000:5000"
-
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-      - redis
-
-  db:
-    image: postgres:14
-    environment:
-      POSTGRES_DB: url_shortener
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-
-  redis:
-    image: redis:alpine
-
-  celery:
-    build: ./backend
-    command: celery -A tasks worker --loglevel=info
-    depends_on:
-      - backend
-      - redis
-
-  nginx:
-    image: nginx:alpine
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    ports:
-      - "80:80"
-    depends_on:
-      - frontend
-      - backend
-```
-
----
-
-## 11. Nginx Configuration
-
-**nginx.conf**
-
-```nginx
-events {}
-
-http {
-    upstream flask_app {
-        server frontend:5000;
-    }
-
-    upstream fastapi_app {
-        server backend:8000;
-    }
-
-    server {
-        listen 80;
-
-        location / {
-            proxy_pass http://flask_app;
-        }
-
-        location /api/ {
-            proxy_pass http://fastapi_app;
-        }
-    }
-}
-```
-
----
-
-## 12. Folder Structure
+## Folder Structure
 
 ```
 url_shortener/
@@ -286,22 +192,10 @@ url_shortener/
 │   ├── Dockerfile
 │   └── requirements.txt
 │
+├── test/
 ├── nginx.conf
 ├── docker-compose.yml
 └── README.md
 ```
 
 ---
-
-## 13. What You’ll Learn
-
-| Concept                          | Skill Developed                  |
-| -------------------------------- | -------------------------------- |
-| **API Design**             | Using FastAPI for REST APIs      |
-| **Frontend Integration**   | Flask + Jinja2 with backend      |
-| **Caching**                | Redis for fast URL lookups       |
-| **Database Design**        | SQL schema & indexing            |
-| **Async Processing**       | Celery tasks for analytics       |
-| **Containerization**       | Multi-service Docker setup       |
-| **Load Balancing**         | Nginx proxy configuration        |
-| **System Design Thinking** | Multi-tier scalable architecture |
