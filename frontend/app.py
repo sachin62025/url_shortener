@@ -20,7 +20,10 @@ def index():
             short_url = r.json().get("short_url")
         except Exception as e:
             error = str(e)
-    return render_template("index.html", short_url=short_url, error=error)
+    # return render_template("index.html", short_url=short_url, error=error)
+    if short_url:
+        return render_template("result.html", short_url=short_url)
+    return render_template("index.html", error=error)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
