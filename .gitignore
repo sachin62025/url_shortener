@@ -12,3 +12,4 @@ instance/
 *.pot
 notes.txt
 run_local.sh
+backend/url_shortener.db

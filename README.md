@@ -33,13 +33,13 @@ When anyone visits that short link, they are **redirected to the original URL**,
         ├──► /        → Flask Frontend (Port 5000)
         └──► /api/... → FastAPI Backend (Port 8000)
   
-  ┌────────────────────────────┐
+  ┌─────────────────────────────────┐
   │ PostgreSQL  →  Permanent Storage│
-  ├────────────────────────────┤
-  │ Redis       →  Caching Layer   │
-  ├────────────────────────────┤
-  │ Celery      →  Async Analytics │
-  └────────────────────────────┘
+  ├─────────────────────────────────┤
+  │ Redis       →  Caching Layer    │
+  ├─────────────────────────────────┤
+  │ Celery      →  Async Analytics  │
+  └─────────────────────────────────┘
 ```
 
 ---
@@ -60,14 +60,14 @@ When anyone visits that short link, they are **redirected to the original URL**,
 
 ## 4. Functional Requirements
 
-✅ **Core Features**
+**Core Features**
 
 1. User submits a long URL → gets back a short URL.
 2. Visiting the short URL redirects to the original link.
 3. Each visit increments a click count asynchronously.
 4. Display analytics (number of clicks, creation date).
 
-✅ **Additional (Optional)**
+**Additional (Optional)**
 
 - Expiry time for short URLs.
 - User authentication for managing links.
